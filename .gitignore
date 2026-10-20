@@ -15,12 +15,7 @@ tmp/
 logs/
 dev/
 
-# Excel 转 enazo 题库：本机表格、抓取缓存、生成结果都不入库
-utils/excel转enazo题库/bin/templates/
-utils/excel转enazo题库/bin/exports/
-utils/excel转enazo题库/bin/cache/
-utils/excel转enazo题库/bin/*.txt
-utils/excel转enazo题库/bin/*.xlsx
+# Python
 __pycache__/
 
 # 编辑器/系统
