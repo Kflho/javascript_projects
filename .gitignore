@@ -1,0 +1,23 @@
+# 本机配置/密钥
+local.json
+local.*.json
+!local.example.json
+project.json
+.env
+.env.*
+*.pem
+*.key
+
+# 临时/输出/日志
+temp/
+tmp/
+*.log
+logs/
+dev/
+
+# 编辑器/系统
+node_modules/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

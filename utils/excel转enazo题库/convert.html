@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel 词库转换器 (无换行优化版)</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', "Microsoft YaHei", sans-serif; background-color: #f5f7f9; display: flex; justify-content: center; padding: 40px; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 700px; }
+        h2 { color: #2c3e50; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .config-info { background: #fff7e6; padding: 10px; border-radius: 6px; font-size: 13px; color: #666; margin-bottom: 20px; border: 1px solid #ffe58f; }
+        .upload-area { border: 2px dashed #3498db; padding: 30px; text-align: center; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        .upload-area:hover { background: #f0f8ff; }
+        #fileInput { display: none; }
+        .btn-group { margin-top: 20px; display: flex; gap: 10px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-convert { background: #3498db; color: white; }
+        .btn-download { background: #27ae60; color: white; display: none; }
+        #preview { width: 100%; height: 300px; margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px; background: #fafafa; box-sizing: border-box; white-space: pre; overflow-y: auto; }
+        .status { margin-top: 10px; font-size: 14px; color: #2c3e50; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Excel 词条转换器</h2>
+    <div class="config-info">
+        <strong>优化处理：</strong> 已加入强制去换行逻辑。即使 Excel 单元格内存在换行（Alt+Enter），输出时也会被压缩到同一行，确保格式为：<code>名称,别名$吐槽</code>
+    </div>
+
+    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        点击选择 XLSX 文件
+        <input type="file" id="fileInput" accept=".xlsx, .xls">
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div class="btn-group">
+        <button class="btn-convert" onclick="processExcel()">执行转换</button>
+        <button id="downloadBtn" class="btn-download" onclick="downloadResult()">下载 output.txt</button>
+    </div>
+
+    <textarea id="preview" readonly placeholder="转换预览..."></textarea>
+</div>
+
+<script>
+    let finalResult = "";
+
+    function processExcel() {
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        if (!fileInput.files[0]) {
+            alert("请选择文件");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                const lines = jsonData.map(row => {
+                    // 核心修正：使用 replace(/[\r\n]+/g, "") 剔除单元格内所有换行符
+                    const clean = (val) => (val || "").toString().replace(/[\r\n]+/g, "").trim();
+
+                    const name = clean(row['名称']);
+                    const alias = clean(row['别名']);
+                    const joke = clean(row['吐槽']);
+                    
+                    let line = `${name},${alias}`;
+                    if (joke !== "") {
+                        line += `$${joke}`;
+                    }
+                    return line;
+                });
+
+                finalResult = lines.join('\n');
+                document.getElementById('preview').value = finalResult;
+                status.innerText = `转换成功：共计 ${lines.length} 行`;
+                downloadBtn.style.display = "block";
+            } catch (err) {
+                status.innerText = "读取失败，请检查列名是否正确";
+            }
+        };
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    }
+
+    function downloadResult() {
+        const blob = new Blob([finalResult], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = "output.txt";
+        a.click();
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        if(e.target.files[0]) status.innerText = "待处理：" + e.target.files[0].name;
+    });
+</script>
+
+</body>
+</html>
